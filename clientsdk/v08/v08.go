@@ -5,19 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
-	"sync"
 	"wechatdll/clientsdk/dynlib"
 
 	"github.com/lunny/log"
 )
 
-var (
-	lib      dynlib.DynamicLibrary
-	mu       sync.Mutex
-	isInit   bool = false
-	initOnce sync.Once
-	callMu   sync.Mutex // 保护对lib.Call的调用
-)
+var lib dynlib.DynamicLibrary
 
 func init() {
 	fmt.Printf("init v08: %v\n", runtime.GOOS)
@@ -37,39 +30,6 @@ func init() {
 	if err != nil {
 		log.Error("Failed to load library: ", err)
 	}
-}
-
-//
-//func Rqtx(md5 string) uint32 {
-//	if !isInit {
-//		mu.Lock()
-//		defer mu.Unlock()
-//	}
-//	ret, _, _ := lib.Call("rqtx", md5)
-//	log.Info("Rqtx returned: ", ret)
-//	isInit = true
-//	return uint32(ret)
-//}
-
-func ensureInit() {
-	initOnce.Do(func() {
-		mu.Lock()
-		defer mu.Unlock()
-		// 初始化逻辑
-		isInit = true
-	})
-}
-
-func Rqtx(md5 string) uint32 {
-	ensureInit()
-
-	// 确保lib.Call在同一时间只能被一个goroutine调用
-	callMu.Lock()
-	defer callMu.Unlock()
-
-	ret, _, _ := lib.Call("rqtx", md5)
-	//defer res.Release()
-	return uint32(ret)
 }
 
 // encode string
